@@ -1,17 +1,17 @@
 import java.util.*
 
 object VectorUtils {
-    operator fun <T : Number, R : Number> Vector<T>.times(other: Vector<R>): Double {
+    operator fun Vector<Double>.times(other: Vector<Double>): Double {
         var res = 0.0
         this.withIndex().map { (i, n) ->
-            res += n.toDouble() * other[i].toDouble()
+            res += n * other[i]
         }
         return res
     }
 
-    operator fun Vector<Double>.plusAssign(other: Number) {
+    operator fun Vector<Double>.plusAssign(other: Double) {
         for ((i, n) in this.withIndex()) {
-            this[i] += other.toDouble()
+            this[i] += other
         }
     }
 
@@ -21,10 +21,10 @@ object VectorUtils {
         }
     }
 
-    operator fun <T: Number> Vector<T>.times(other: Number): Vector<Double> {
+    operator fun Vector<Double>.times(other: Double): Vector<Double> {
         return Vector(
                 this.withIndex().map { (i, n) ->
-                    n.toDouble() * other.toDouble()
+                    n * other
                 }
         )
     }
