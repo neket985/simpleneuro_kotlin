@@ -1,4 +1,5 @@
 import VectorUtils.times
+import VectorUtils.plusAssign
 import java.util.*
 import kotlin.random.Random
 
@@ -23,7 +24,7 @@ class Neuron(relationsCount: Int, private val alpha: Double) {
     }
 
     private fun z(input: Vector<Double>): Double {
-        lastZ = input * weights + b
+        lastZ = (input * weights) + b
         return lastZ
     }
 
@@ -32,7 +33,8 @@ class Neuron(relationsCount: Int, private val alpha: Double) {
                 -(output - lastCalc) * derivFun(lastZ),
                 weights
         )
-
+        correctWeights(delta.delta)
+        correctB(delta.delta)
         return delta
     }
 
@@ -41,7 +43,8 @@ class Neuron(relationsCount: Int, private val alpha: Double) {
                 summaryDelta * derivFun(lastZ),
                 weights
         )
-
+        correctWeights(delta.delta)
+        correctB(delta.delta)
         return delta
     }
 

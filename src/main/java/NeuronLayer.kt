@@ -1,11 +1,12 @@
 import java.util.*
 
 class NeuronLayer(
-        private val size: Int,
+        size: Int,
+        alpha: Double,
         private val prevLayerSize: Int
 ) {
     val neurons = Vector<Neuron>((0 until size).map {
-        Neuron(prevLayerSize)
+        Neuron(prevLayerSize, alpha)
     }.toMutableList())
 
     fun calcOut(input: Vector<Double>): Vector<Double> =
