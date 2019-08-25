@@ -1,3 +1,4 @@
+import org.apache.commons.math3.linear.MatrixUtils
 import org.junit.Test
 import java.util.*
 
@@ -6,22 +7,22 @@ class NeuronWebTest {
     @Test
     fun simpleTest() {
         val training_set_inputs = arrayOf(
-                Vector(mutableListOf(0.0, 0.0, 1.0)),
-                Vector(mutableListOf(1.0, 1.0, 1.0)),
-                Vector(mutableListOf(1.0, 0.0, 1.0)),
-                Vector(mutableListOf(0.0, 1.0, 1.0))
+                MatrixUtils.createRealVector(arrayOf(0.0, 0.0, 1.0).toDoubleArray()),
+                MatrixUtils.createRealVector(arrayOf(1.0, 1.0, 1.0).toDoubleArray()),
+                MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 1.0).toDoubleArray()),
+                MatrixUtils.createRealVector(arrayOf(0.0, 1.0, 1.0).toDoubleArray())
         )
         val training_set_outputs = arrayOf(
-                Vector(mutableListOf(0.0)),
-                Vector(mutableListOf(1.0)),
-                Vector(mutableListOf(1.0)),
-                Vector(mutableListOf(0.0))
+                MatrixUtils.createRealVector(arrayOf(0.0).toDoubleArray()),
+                MatrixUtils.createRealVector(arrayOf(1.0).toDoubleArray()),
+                MatrixUtils.createRealVector(arrayOf(1.0).toDoubleArray()),
+                MatrixUtils.createRealVector(arrayOf(0.0).toDoubleArray())
         )
 
         val web = NeuronWeb(1, listOf(3, 1))
 
         web.trainAll(0.1, 1000, training_set_inputs.toList(), training_set_outputs.toList())
 
-        assert(web.calcOut(Vector(mutableListOf(1.0, 0.0, 0.0))).firstElement() > 0.9)
+        assert(web.calcOut(MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 0.0).toDoubleArray())).getEntry(0) > 0.9)
     }
 }

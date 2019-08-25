@@ -1,31 +1,35 @@
+import org.apache.commons.math3.linear.MatrixUtils
+import org.apache.commons.math3.linear.RealVector
 import java.util.*
 
 class NeuronLayer(
         val size: Int,
         val prevLayerSize: Int
 ) {
-    val neurons = Vector<Neuron>((0 until size).map {
+    val neurons = (0 until size).map {
         Neuron(prevLayerSize)
-    }.toMutableList())
+    }
 
-    fun calcOut(input: Vector<Double>): Vector<Double> =
-            Vector(neurons.map { neuron ->
-                neuron.calcOut(input)
-            })
+    fun calcOut(input: RealVector): RealVector =
+            MatrixUtils.createRealVector(
+                    DoubleArray(size) { i ->
+                        val neuron = neurons[i]
+                        neuron.calcOut(input)
+                    }
+            )
 
-    fun getDeltasForLastLayer(output: Vector<Double>, step: Double) = Vector(
+    fun getDeltasForLastLayer(output: RealVector, step: Double) = Vector(
             neurons.mapIndexed { i, neuron ->
-                neuron.deltaForLastLayer(output[i], step)
+                neuron.deltaForLastLayer(output.getEntry(i), step)
             }
     )
 
-    fun getDeltas(nextDeltas: Vector<Delta>, step: Double) = Vector(
+    fun getDeltas(nextDeltas: List<Delta>, step: Double) = Vector(
             neurons.mapIndexed { i, neuron ->
                 val nextDeltaSum = nextDeltas.sumByDouble {
-                    it.delta * it.weights[i]
+                    it.delta * it.weights.getEntry(i)
                 }
                 neuron.delta(nextDeltaSum, step)
             }
     )
-
 }

@@ -1,30 +1,30 @@
-import VectorUtils.plusAssign
-import VectorUtils.times
-import java.util.*
+import org.apache.commons.math3.linear.MatrixUtils
+import org.apache.commons.math3.linear.RealVector
 import kotlin.random.Random
 
 class Neuron(val relationsCount: Int) {
-    private val weights = Vector(
-            (0 until relationsCount).map {
+    private var weights = MatrixUtils.createRealVector(
+            DoubleArray(relationsCount
+            ) {
                 rand.nextDouble(2.0) - 1
-            }.toMutableList()
+            }
     )
 
     private var b = 0.0
 
     private var lastCalc: Double = 0.0
-    private var lastInput: Vector<Double>? = null
+    private var lastInput: RealVector? = null
     private var lastZ: Double = 0.0
 
 
-    fun calcOut(input: Vector<Double>): Double {
+    fun calcOut(input: RealVector): Double {
         lastInput = input
         lastCalc = synoidFun(z(input))
         return lastCalc
     }
 
-    private fun z(input: Vector<Double>): Double {
-        lastZ = (input * weights) + b
+    private fun z(input: RealVector): Double {
+        lastZ = input.dotProduct(weights) + b
         return lastZ
     }
 
@@ -50,10 +50,10 @@ class Neuron(val relationsCount: Int) {
 
     private fun correctWeights(delta: Double, step: Double) {
         if (lastInput != null) {
-            val correctVector = Vector(lastInput!!.map {
+            val correctVector = lastInput!!.map {
                 -step * it * delta
-            })
-            weights += correctVector
+            }
+            weights = weights.add(correctVector)
         }
     }
 

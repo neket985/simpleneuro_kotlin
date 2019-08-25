@@ -1,6 +1,6 @@
-import java.util.*
+import org.apache.commons.math3.linear.RealVector
 
-data class Delta (
+data class Delta(
         val delta: Double,
-        val weights: Vector<Double>
+        val weights: RealVector
 )

@@ -1,3 +1,5 @@
+import org.apache.commons.math3.linear.MatrixUtils
+import org.apache.commons.math3.linear.RealVector
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -19,11 +21,11 @@ class NeuronWeb(val layersCount: Int, val layersSizes: List<Int>) {
         }
     }
 
-    fun calcOut(input: Vector<Double>): Vector<Double> {
-        if (input.size != inputSize) throw Error("Входной вектор по размерам не совпадает с ожидаемым")
+    fun calcOut(input: RealVector): RealVector {
+        if (input.dimension != inputSize) throw Error("Входной вектор по размерам не совпадает с ожидаемым")
 
         val iter = layers.iterator()
-        var result: Vector<Double> = input
+        var result: RealVector = input
         while (iter.hasNext()) {
             val layer = iter.next()
             result = layer.calcOut(result)
@@ -31,7 +33,7 @@ class NeuronWeb(val layersCount: Int, val layersSizes: List<Int>) {
         return result
     }
 
-    fun train(step: Double, input: Vector<Double>, output: Vector<Double>) {
+    fun train(step: Double, input: RealVector, output: RealVector) {
         calcOut(input)
         val lastLayer = layers.last()
         var nextDeltas = lastLayer.getDeltasForLastLayer(output, step)
@@ -42,7 +44,7 @@ class NeuronWeb(val layersCount: Int, val layersSizes: List<Int>) {
         }
     }
 
-    fun trainAll(step: Double, iterations: Int, input: List<Vector<Double>>, output: List<Vector<Double>>) {
+    fun trainAll(step: Double, iterations: Int, input: List<RealVector>, output: List<RealVector>) {
         if (input.size != output.size) throw Error("Размер входного массива не соответствует размеру выходного")
 
         for (i in 0..iterations) {
@@ -51,8 +53,8 @@ class NeuronWeb(val layersCount: Int, val layersSizes: List<Int>) {
                 val train_otput = output[j]
                 train(step, train_input, train_otput)
             }
-            println(calcOut(Vector(mutableListOf(1.0, 0.0, 0.0))).toString())
-//            logger.fine(calcOut(Vector(mutableListOf(1.0, 0.0, 0.0))).toString())
+            println(calcOut(MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 0.0).toDoubleArray())).toString())
+//            logger.fine(calcOut(MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 0.0).toDoubleArray()))
         }
     }
 
