@@ -1,9 +1,9 @@
-import VectorUtils.times
 import VectorUtils.plusAssign
+import VectorUtils.times
 import java.util.*
 import kotlin.random.Random
 
-class Neuron(relationsCount: Int, private val alpha: Double) {
+class Neuron(val relationsCount: Int) {
     private val weights = Vector(
             (0 until relationsCount).map {
                 rand.nextDouble(2.0) - 1
@@ -28,37 +28,37 @@ class Neuron(relationsCount: Int, private val alpha: Double) {
         return lastZ
     }
 
-    fun deltaForLastLayer(output: Double): Delta {
+    fun deltaForLastLayer(output: Double, step: Double): Delta {
         val delta = Delta(
                 -(output - lastCalc) * derivFun(lastZ),
                 weights
         )
-        correctWeights(delta.delta)
-        correctB(delta.delta)
+        correctWeights(delta.delta, step)
+        correctB(delta.delta, step)
         return delta
     }
 
-    fun delta(summaryDelta: Double): Delta {
+    fun delta(summaryDelta: Double, step: Double): Delta {
         val delta = Delta(
                 summaryDelta * derivFun(lastZ),
                 weights
         )
-        correctWeights(delta.delta)
-        correctB(delta.delta)
+        correctWeights(delta.delta, step)
+        correctB(delta.delta, step)
         return delta
     }
 
-    private fun correctWeights(delta: Double) {
+    private fun correctWeights(delta: Double, step: Double) {
         if (lastInput != null) {
             val correctVector = Vector(lastInput!!.map {
-                -alpha * it * delta
+                -step * it * delta
             })
             weights += correctVector
         }
     }
 
-    private fun correctB(delta: Double) {
-        b += -alpha * delta
+    private fun correctB(delta: Double, step: Double) {
+        b += -step * delta
     }
 
     companion object {

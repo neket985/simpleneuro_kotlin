@@ -1,12 +1,11 @@
 import java.util.*
 
 class NeuronLayer(
-        size: Int,
-        alpha: Double,
-        private val prevLayerSize: Int
+        val size: Int,
+        val prevLayerSize: Int
 ) {
     val neurons = Vector<Neuron>((0 until size).map {
-        Neuron(prevLayerSize, alpha)
+        Neuron(prevLayerSize)
     }.toMutableList())
 
     fun calcOut(input: Vector<Double>): Vector<Double> =
@@ -14,18 +13,18 @@ class NeuronLayer(
                 neuron.calcOut(input)
             })
 
-    fun getDeltasForLastLayer(output: Vector<Double>) = Vector(
+    fun getDeltasForLastLayer(output: Vector<Double>, step: Double) = Vector(
             neurons.mapIndexed { i, neuron ->
-                neuron.deltaForLastLayer(output[i])
+                neuron.deltaForLastLayer(output[i], step)
             }
     )
 
-    fun getDeltas(nextDeltas: Vector<Delta>) = Vector(
+    fun getDeltas(nextDeltas: Vector<Delta>, step: Double) = Vector(
             neurons.mapIndexed { i, neuron ->
                 val nextDeltaSum = nextDeltas.sumByDouble {
                     it.delta * it.weights[i]
                 }
-                neuron.delta(nextDeltaSum)
+                neuron.delta(nextDeltaSum, step)
             }
     )
 
