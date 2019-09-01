@@ -65,6 +65,25 @@ class NeuronWeb(val layersCount: Int, val layersSizes: List<Int>, layers: List<N
         }
     }
 
+    override fun equals(other: Any?) =
+            if (other is NeuronWeb) {
+                this.layersCount == other.layersCount &&
+                        this.inputSize == other.inputSize &&
+                        this.layersSizes == other.layersSizes &&
+                        this.layers == other.layers
+            } else {
+                super.equals(other)
+            }
+
+    override fun hashCode(): Int {
+        var result = layersCount
+        result = 31 * result + layersSizes.hashCode()
+        result = 31 * result + inputSize
+        result = 31 * result + layers.hashCode()
+        return result
+    }
+
+
     companion object {
         private val logger = Logger.getLogger(this::class.java.name)
         private const val minStep = 0.00001

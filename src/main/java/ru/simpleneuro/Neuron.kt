@@ -70,6 +70,22 @@ class Neuron(val relationsCount: Int, weights: RealVector? = null, b: Double? = 
         b += -step * delta
     }
 
+    override fun equals(other: Any?) =
+            if (other is Neuron) {
+                this.relationsCount == other.relationsCount &&
+                        this.b == other.b &&
+                        this.weights == other.weights
+            } else {
+                super.equals(other)
+            }
+
+    override fun hashCode(): Int {
+        var result = relationsCount
+        result = 31 * result + (weights?.hashCode() ?: 0)
+        result = 31 * result + b.hashCode()
+        return result
+    }
+
     companion object {
         private fun synoidFun(x: Double) = 1 / (1 + Math.exp(-x))
         private fun derivFun(x: Double) = synoidFun(x).let { it * (1 - it) }

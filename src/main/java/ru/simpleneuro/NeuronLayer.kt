@@ -43,4 +43,21 @@ class NeuronLayer(
                 neuron.delta(nextDeltaSum, step)
             }
     )
+
+    override fun equals(other: Any?) =
+            if (other is NeuronLayer) {
+                this.prevLayerSize == other.prevLayerSize &&
+                        this.size == other.size &&
+                        this.neurons == other.neurons
+            } else {
+                super.equals(other)
+            }
+
+    override fun hashCode(): Int {
+        var result = size
+        result = 31 * result + prevLayerSize
+        result = 31 * result + neurons.hashCode()
+        return result
+    }
+
 }

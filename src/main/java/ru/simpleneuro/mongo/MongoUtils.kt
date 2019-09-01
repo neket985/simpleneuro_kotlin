@@ -15,7 +15,6 @@ import org.apache.commons.math3.linear.RealVector
 import org.litote.kmongo.*
 import org.litote.kmongo.util.KMongoConfiguration
 import ru.simpleneuro.NeuronWeb
-import java.net.InetAddress
 
 object MongoUtils {
     private val config = ConfigFactory.load().getConfig("mongoDb")
@@ -62,5 +61,7 @@ object MongoUtils {
     }
 
     fun loadWeb(name: String) = neuronCollection.findOne(NeuronWebMongoEntity::name eq name)
+
+    fun deleteWeb(name: String) = neuronCollection.deleteOne(NeuronWebMongoEntity::name eq name)
 
 }
