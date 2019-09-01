@@ -1,14 +1,25 @@
+package ru.simpleneuro
+
 import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealVector
 import java.util.*
 
 class NeuronLayer(
         val size: Int,
-        val prevLayerSize: Int
+        val prevLayerSize: Int,
+        neurons: List<Neuron>? = null
 ) {
-    val neurons = (0 until size).map {
-        Neuron(prevLayerSize)
-    }
+    val neurons =
+            if (neurons != null) {
+                if (neurons.size != size)
+                    throw Error("Размер слоя не соответсвует размеру массива")
+
+                neurons
+            } else {
+                (0 until size).map {
+                    Neuron(prevLayerSize)
+                }
+            }
 
     fun calcOut(input: RealVector): RealVector =
             MatrixUtils.createRealVector(

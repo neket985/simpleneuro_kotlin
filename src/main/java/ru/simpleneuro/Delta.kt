@@ -1,3 +1,5 @@
+package ru.simpleneuro
+
 import org.apache.commons.math3.linear.RealVector
 
 data class Delta(

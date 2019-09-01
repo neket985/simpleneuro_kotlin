@@ -1,25 +1,32 @@
+package ru.simpleneuro
+
 import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealVector
-import java.util.*
-import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.math.exp
 
-class NeuronWeb(val layersCount: Int, val layersSizes: List<Int>) {
-    val inputSize = layersSizes.first()
+class NeuronWeb(val layersCount: Int, val layersSizes: List<Int>, layers: List<NeuronLayer>? = null) {
+    private val inputSize = layersSizes.first()
 
     init {
-        if (layersSizes.size != layersCount + 1) throw Error("Количество размеров слоев не соответсвует количеству слоев")
+        if (layersSizes.size != layersCount + 1)
+            throw Error("Количество размеров слоев не соответсвует количеству слоев")
     }
 
-    val layers = layersSizes.mapIndexedNotNull { i, size ->
-        if (i == 0) {
-            null
-        } else {
-            val prevSize = layersSizes[i - 1]
-            NeuronLayer(size, prevSize)
-        }
-    }
+    val layers =
+            if (layers != null) {
+                if (layersSizes.size != layers.size + 1)
+                    throw Error("Количество размеров слоев не соответсвует списку слоев")
+                layers
+            } else {
+                layersSizes.mapIndexedNotNull { i, size ->
+                    if (i == 0) {
+                        null
+                    } else {
+                        val prevSize = layersSizes[i - 1]
+                        NeuronLayer(size, prevSize)
+                    }
+                }
+            }
 
     fun calcOut(input: RealVector): RealVector {
         if (input.dimension != inputSize) throw Error("Входной вектор по размерам не совпадает с ожидаемым")

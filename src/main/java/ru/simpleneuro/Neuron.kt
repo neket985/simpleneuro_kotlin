@@ -1,16 +1,25 @@
+package ru.simpleneuro
+
 import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealVector
 import kotlin.random.Random
 
-class Neuron(val relationsCount: Int) {
-    private var weights = MatrixUtils.createRealVector(
-            DoubleArray(relationsCount
-            ) {
-                rand.nextDouble(2.0) - 1
+class Neuron(val relationsCount: Int, weights: RealVector? = null, b: Double? = null) {
+    var weights =
+            if (weights != null) {
+                if (weights.dimension != relationsCount)
+                    throw Error("Размер вектора весов не соответствует числу входных связей нейрона")
+                weights
+            } else {
+                MatrixUtils.createRealVector(
+                        DoubleArray(relationsCount
+                        ) {
+                            rand.nextDouble(2.0) - 1
+                        }
+                )
             }
-    )
 
-    private var b = 0.0
+    var b = b ?: 0.0
 
     private var lastCalc: Double = 0.0
     private var lastInput: RealVector? = null

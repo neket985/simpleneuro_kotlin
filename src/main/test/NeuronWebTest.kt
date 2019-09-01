@@ -1,6 +1,6 @@
 import org.apache.commons.math3.linear.MatrixUtils
 import org.junit.Test
-import java.util.*
+import ru.simpleneuro.NeuronWeb
 
 class NeuronWebTest {
 
@@ -19,9 +19,14 @@ class NeuronWebTest {
                 MatrixUtils.createRealVector(arrayOf(0.0).toDoubleArray())
         )
 
-        val web = NeuronWeb(1, listOf(3, 1))
+        val web = NeuronWeb(4, listOf(3,
+                2,
+                2,
+                2,
+                1
+        ))
 
-        web.trainAll(0.1, 1000, training_set_inputs.toList(), training_set_outputs.toList())
+        web.trainAll(0.1, 100000, training_set_inputs.toList(), training_set_outputs.toList())
 
         assert(web.calcOut(MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 0.0).toDoubleArray())).getEntry(0) > 0.9)
     }
