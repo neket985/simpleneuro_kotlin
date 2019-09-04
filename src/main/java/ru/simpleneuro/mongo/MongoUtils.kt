@@ -51,8 +51,10 @@ object MongoUtils {
         )
     }
 
+    fun saveWeb(web: NeuronWebMongoEntity): NeuronWebMongoEntity? = saveWeb(web.name, web.web)
+
     fun saveWeb(name: String, web: NeuronWeb): NeuronWebMongoEntity? {
-        val result = neuronCollection.updateOne(NeuronWebMongoEntity::name eq name, setValue(NeuronWebMongoEntity::web, web))
+        val result = neuronCollection.updateOne(NeuronWeb::name eq name, setValue(NeuronWebMongoEntity::web, web))
         if (result.matchedCount == 0L) {
             neuronCollection.insertOne(NeuronWebMongoEntity(name, web))
         }

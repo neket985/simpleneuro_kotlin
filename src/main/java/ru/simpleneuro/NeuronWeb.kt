@@ -2,10 +2,11 @@ package ru.simpleneuro
 
 import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealVector
-import org.apache.commons.math3.util.MathUtils
 import java.util.logging.Logger
 
-class NeuronWeb(val layersCount: Int, val layersSizes: List<Int>, layers: List<NeuronLayer>? = null) {
+class NeuronWeb(val name: String, val layersCount: Int, val layersSizes: List<Int>, layers: List<NeuronLayer>? = null) {
+    private val meter = ApplicationVars.metrics.meter("$name.train.meter")
+    private val distanceHist = ApplicationVars.metrics.histogram("$name.train.distance.histogram")
     private val inputSize = layersSizes.first()
     private val lock = Object()
 
@@ -44,8 +45,9 @@ class NeuronWeb(val layersCount: Int, val layersSizes: List<Int>, layers: List<N
         }
     }
 
-    fun train(step: Double, input: RealVector, output: RealVector): Double{
+    fun train(step: Double, input: RealVector, output: RealVector): Double {
         synchronized(lock) {
+            meter.mark()
             val out = calcOut(input)
 
             val lastLayer = layers.last()
@@ -55,12 +57,15 @@ class NeuronWeb(val layersCount: Int, val layersSizes: List<Int>, layers: List<N
                     nextDeltas = layer.getDeltas(nextDeltas, step)
                 }
             }
-            return output.getDistance(out)
+            val dist = output.getDistance(out)
+            distanceHist.update((1000000 * dist).toLong())
+            return dist
         }
     }
 
     fun trainAll(step: Double, iterations: Int, input: List<RealVector>, output: List<RealVector>) {
         synchronized(lock) {
+            meter.mark(input.size.toLong())
             if (input.size != output.size) throw Error("Размер входного массива не соответствует размеру выходного")
 
             for (i in 0..iterations) {

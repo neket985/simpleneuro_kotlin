@@ -3,7 +3,7 @@
         <file>myApp.log</file>
 
         <encoder>
-            <pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n</pattern>
+            <pattern>%date [%thread] %-5level %logger{36}.%M\(%line\) %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -13,8 +13,8 @@
         </encoder>
     </appender>
 
-    <logger name="org.mongodb" level="debug"/>
-    <root level="debug">
+    <logger name="org.mongodb" level="info"/>
+    <root level="info">
         <!--<appender-ref ref="FILE" />-->
         <appender-ref ref="STDOUT" />
     </root>
