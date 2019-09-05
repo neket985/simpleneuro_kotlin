@@ -1,14 +1,17 @@
 package ru.simpleneuro
 
-import org.apache.commons.math3.linear.MatrixUtils
-import org.apache.commons.math3.linear.RealVector
-import java.util.*
+import jeigen.DenseMatrix
+import java.lang.Math.exp
 
 class NeuronLayer(
         val size: Int,
         val prevLayerSize: Int,
         neurons: List<Neuron>? = null
 ) {
+    private var lastCalc: DenseVector? = null
+    private var lastInput: DenseVector? = null
+    private var lastZ: DenseVector? = null
+
     val neurons =
             if (neurons != null) {
                 if (neurons.size != size)
@@ -21,28 +24,54 @@ class NeuronLayer(
                 }
             }
 
-    fun calcOut(input: RealVector): RealVector =
-            MatrixUtils.createRealVector(
-                    DoubleArray(size) { i ->
-                        val neuron = neurons[i]
-                        neuron.calcOut(input)
-                    }
-            )
-
-    fun getDeltasForLastLayer(output: RealVector, step: Double) = Vector(
-            neurons.mapIndexed { i, neuron ->
-                neuron.deltaForLastLayer(output.getEntry(i), step)
-            }
-    )
-
-    fun getDeltas(nextDeltas: List<Delta>, step: Double) = Vector(
-            neurons.mapIndexed { i, neuron ->
-                val nextDeltaSum = nextDeltas.sumByDouble {
-                    it.delta * it.weights.getEntry(i)
+    fun calcOut(input: DenseVector): DenseVector {
+        lastInput = input
+        val layerWMatrix = DenseMatrix(
+                Array(size) { i ->
+                    neurons[i].weights.values
                 }
-                neuron.delta(nextDeltaSum, step)
-            }
-    )
+        )
+        val layerBVector = DenseVector(
+                DoubleArray(size) { i ->
+                    neurons[i].b
+                }
+        )
+
+        lastCalc = synoidFun(z(input, layerWMatrix, layerBVector))
+        return lastCalc!!
+    }
+
+
+    fun getDeltas(nextSumDeltas: List<Double>, output: DenseVector, step: Double): List<Double> {
+        val deltas =
+                if (nextSumDeltas.isEmpty()) {
+                    output.neg().add(lastCalc).mmul(derivFun(lastZ!!).t())
+                } else {
+                    derivFun(lastZ!!).t()
+                }
+        val q = deltas.values.mapIndexed { i, delta ->
+            val nextSumDelta = if (nextSumDeltas.isNotEmpty()) nextSumDeltas[i] else 1.0
+            val normalDelta = nextSumDelta * delta
+            val neuron = neurons[i]
+            val summaryDelta = neuron.weights.mul(normalDelta)//для отправки в предыдущие слои
+
+            val inputColumn = lastInput!!.col(i)
+            val correctwVector = inputColumn.mul(-step * normalDelta) // it * delta *(-step)
+            neuron.correctWeights(correctwVector)
+            neuron.correctB(normalDelta, step)
+            summaryDelta
+        }
+        return q.mapIndexed { i, _ ->
+            q.sumByDouble {
+                it[i, 0]
+            } + (nextSumDeltas.getOrNull(i) ?: 0.0)
+        }
+    }
+
+    private fun z(input: DenseVector, weights: DenseMatrix, b: DenseVector): DenseVector {
+        lastZ = weights.mmul(input).add(b).toVector()
+        return lastZ!!
+    }
 
     override fun equals(other: Any?) =
             if (other is NeuronLayer) {
@@ -58,6 +87,17 @@ class NeuronLayer(
         result = 31 * result + prevLayerSize
         result = 31 * result + neurons.hashCode()
         return result
+    }
+
+    companion object {
+        private fun synoidFun(x: DenseVector, handle: (Double) -> Double = { it }) = DenseVector(
+                x.values.map { x ->
+                    handle(1 / (1 + exp(-x)))
+                }.toTypedArray().toDoubleArray()
+        ) //1 / (1 + exp(-x))
+
+        private fun derivFun(x: DenseVector) = synoidFun(x) { it * (1 - it) }
+
     }
 
 }

@@ -1,72 +1,36 @@
 package ru.simpleneuro
 
-import org.apache.commons.math3.linear.MatrixUtils
+import jeigen.DenseMatrix
 import org.apache.commons.math3.linear.RealVector
+import kotlin.math.exp
 import kotlin.random.Random
 
-class Neuron(val relationsCount: Int, weights: RealVector? = null, b: Double? = null) {
+class Neuron(val relationsCount: Int, weights: DenseMatrix? = null, b: Double? = null) {
     var weights =
             if (weights != null) {
-                if (weights.dimension != relationsCount)
+                if (weights.cols != relationsCount)
                     throw Error("Размер вектора весов не соответствует числу входных связей нейрона")
+                else if (weights.rows != 1)
+                    throw Error("Входные веса не являются вектором")
+
                 weights
             } else {
-                MatrixUtils.createRealVector(
-                        DoubleArray(relationsCount
-                        ) {
-                            rand.nextDouble(2.0) - 1
-                        }
+                DenseMatrix(
+                        arrayOf(
+                                DoubleArray(relationsCount) {
+                                    rand.nextDouble(2.0) - 1
+                                }
+                        )
                 )
             }
 
     var b = b ?: 0.0
 
-    private var lastCalc: Double = 0.0
-    private var lastInput: RealVector? = null
-    private var lastZ: Double = 0.0
-
-
-    fun calcOut(input: RealVector): Double {
-        lastInput = input
-        lastCalc = synoidFun(z(input))
-        return lastCalc
+    fun correctWeights(correctVector: DenseMatrix) {
+        weights = weights.add(correctVector)
     }
 
-    private fun z(input: RealVector): Double {
-        lastZ = input.dotProduct(weights) + b
-        return lastZ
-    }
-
-    fun deltaForLastLayer(output: Double, step: Double): Delta {
-        val delta = Delta(
-                -(output - lastCalc) * derivFun(lastZ),
-                weights
-        )
-        correctWeights(delta.delta, step)
-        correctB(delta.delta, step)
-        return delta
-    }
-
-    fun delta(summaryDelta: Double, step: Double): Delta {
-        val delta = Delta(
-                summaryDelta * derivFun(lastZ),
-                weights
-        )
-        correctWeights(delta.delta, step)
-        correctB(delta.delta, step)
-        return delta
-    }
-
-    private fun correctWeights(delta: Double, step: Double) {
-        if (lastInput != null) {
-            val correctVector = lastInput!!.map {
-                -step * it * delta
-            }
-            weights = weights.add(correctVector)
-        }
-    }
-
-    private fun correctB(delta: Double, step: Double) {
+    fun correctB(delta: Double, step: Double) {
         b += -step * delta
     }
 
@@ -81,14 +45,16 @@ class Neuron(val relationsCount: Int, weights: RealVector? = null, b: Double? = 
 
     override fun hashCode(): Int {
         var result = relationsCount
-        result = 31 * result + (weights?.hashCode() ?: 0)
+        result = 31 * result + (weights.hashCode())
         result = 31 * result + b.hashCode()
         return result
     }
 
     companion object {
-        private fun synoidFun(x: Double) = 1 / (1 + Math.exp(-x))
+        private fun synoidFun(x: Double) = 1 / (1 + exp(-x))
+        private fun synoidFun(x: RealVector) = x.map { 1 / (1 + exp(-it)) }
         private fun derivFun(x: Double) = synoidFun(x).let { it * (1 - it) }
+        private fun derivFun(x: RealVector) = synoidFun(x).map { it * (1 - it) }.toArray().sum()
         val rand = Random(1)
     }
 }

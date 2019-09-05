@@ -1,7 +1,6 @@
 package ru.simpleneuro
 
-import org.apache.commons.math3.linear.MatrixUtils
-import org.apache.commons.math3.linear.RealVector
+import jeigen.DenseMatrix
 import java.util.logging.Logger
 
 class NeuronWeb(val name: String, val layersCount: Int, val layersSizes: List<Int>, layers: List<NeuronLayer>? = null) {
@@ -31,12 +30,12 @@ class NeuronWeb(val name: String, val layersCount: Int, val layersSizes: List<In
                 }
             }
 
-    fun calcOut(input: RealVector): RealVector {
+    fun calcOut(input: DenseVector): DenseMatrix {
         synchronized(lock) {
-            if (input.dimension != inputSize) throw Error("Входной вектор по размерам не совпадает с ожидаемым")
+            if (input.rows != inputSize) throw Error("Входной вектор по размерам не совпадает с ожидаемым")
 
             val iter = layers.iterator()
-            var result: RealVector = input
+            var result: DenseVector = input
             while (iter.hasNext()) {
                 val layer = iter.next()
                 result = layer.calcOut(result)
@@ -45,38 +44,21 @@ class NeuronWeb(val name: String, val layersCount: Int, val layersSizes: List<In
         }
     }
 
-    fun train(step: Double, input: RealVector, output: RealVector): Double {
+    fun train(step: Double, input: DenseVector, output: DenseVector): Double {
         synchronized(lock) {
-            meter.mark()
+            meter.mark(input.rows.toLong())
             val out = calcOut(input)
 
             val lastLayer = layers.last()
-            var nextDeltas = lastLayer.getDeltasForLastLayer(output, step)
+            var nextDeltas = lastLayer.getDeltas(listOf(), output, step)
             if (layersCount > 1) {
                 layers.reversed().subList(1, layersCount).forEach { layer ->
-                    nextDeltas = layer.getDeltas(nextDeltas, step)
+                    nextDeltas = layer.getDeltas(nextDeltas, output, step)
                 }
             }
-            val dist = output.getDistance(out)
-            distanceHist.update((1000000 * dist).toLong())
-            return dist
-        }
-    }
-
-    fun trainAll(step: Double, iterations: Int, input: List<RealVector>, output: List<RealVector>) {
-        synchronized(lock) {
-            meter.mark(input.size.toLong())
-            if (input.size != output.size) throw Error("Размер входного массива не соответствует размеру выходного")
-
-            for (i in 0..iterations) {
-                for (j in 0 until input.size) {
-                    val train_input = input[j]
-                    val train_otput = output[j]
-                    train(step, train_input, train_otput)
-                }
-                println(calcOut(MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 0.0).toDoubleArray())).toString())
-//            logger.fine(calcOut(MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 0.0).toDoubleArray()))
-            }
+//            val dist = output.di(out)
+//            distanceHist.update((1000000 * dist).toLong())
+            return 0.0
         }
     }
 

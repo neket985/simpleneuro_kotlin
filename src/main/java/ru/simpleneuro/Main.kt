@@ -39,10 +39,15 @@ object Main {
             val web = MongoUtils.loadWeb("numbers")!!
             val fAs = infinityTrain(web, trainVectors, 0.1)
 
-            val web2 = MongoUtils.loadWeb("numbers2")!!
-            val sAs = infinityTrain(web2, trainVectors, 0.01)
+//            val web2 = MongoUtils.loadWeb("numbers2")!!
+//            val sAs = infinityTrain(web2, trainVectors, 0.001)
+
+            val web3 = MongoUtils.loadWeb("numbers3")
+                    ?: NeuronWebMongoEntity("numbers3", NeuronWeb("numbers3", 3, listOf(784, 800, 800, 10)))
+            val tAs = infinityTrain(web3, trainVectors, 0.5)
             fAs.join()
-            sAs.join()
+//            sAs.join()
+            tAs.join()
         }
 
     }
@@ -50,17 +55,18 @@ object Main {
     fun infinityTrain(web: NeuronWebMongoEntity, trainVectors: ConcurrentHashMap<Int, List<Pair<RealVector, RealVector>>>,
                       trainScope: Double) =
             GlobalScope.async {
-                while (true) {
-                    (0..1000).forEach {
-                        (0..9).forEach { i ->
-                            val train = trainVectors[i]!!
-                            val randFile = Random.nextInt(train.size)
-                            val (vector, outVector) = train[randFile]
-                            web.web.train(trainScope, vector, outVector)
-                        }
-                    }
-                    GlobalScope.async {
+                GlobalScope.async {
+                    while (true) {
+                        Thread.sleep(5 * 60 * 1000)
                         MongoUtils.saveWeb(web.name, web.web)
+                    }
+                }
+                while (true) {
+                    (0..9).forEach { i ->
+                        val train = trainVectors[i]!!
+                        val randFile = Random.nextInt(train.size)
+                        val (vector, outVector) = train[randFile]
+//                        web.web.train(trainScope, vector, outVector)
                     }
                 }
             }

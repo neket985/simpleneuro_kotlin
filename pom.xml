@@ -68,6 +68,18 @@
             <artifactId>okhttp</artifactId>
             <version>3.11.0</version>
         </dependency>
+
+        <!--https://github.com/hughperkins/jeigen-->
+        <dependency>
+            <groupId>jeigen</groupId>
+            <artifactId>Jeigen-onefat</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>jeigen</groupId>
+            <artifactId>jna</artifactId>
+            <version>4.1.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -99,5 +111,13 @@
         </plugins>
     </build>
 
+    
+    <repositories>
+        <repository>
+            <id>insane</id>
+            <name>insane</name>
+            <url>https://www.insane.dees.ufmg.br/maven-repo/</url>
+        </repository>
+    </repositories>
 
 </project>

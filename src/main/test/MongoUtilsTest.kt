@@ -6,18 +6,18 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class MongoUtilsTest {
-    private val web = NeuronWeb(3, listOf(3, 2, 2, 1))
+    private val web = NeuronWeb("", 3, listOf(3, 2, 2, 1))
 
     init {
-        web.train(0.1, //случайные вектора для изменения начальных значений весов в нейронах
-                MatrixUtils.createRealVector(DoubleArray(3) {
-                    1.0
-                }),
-                MatrixUtils.createRealVector(DoubleArray(1) {
-                    1.0
-
-                })
-        )
+//        web.train(0.1, //случайные вектора для изменения начальных значений весов в нейронах
+//                MatrixUtils.createRealVector(DoubleArray(3) {
+//                    1.0
+//                }),
+//                MatrixUtils.createRealVector(DoubleArray(1) {
+//                    1.0
+//
+//                })
+//        )
     }
 
     @Test
