@@ -51,15 +51,15 @@ object MongoUtils {
         )
     }
 
-    fun saveWeb(web: NeuronWebMongoEntity): NeuronWebMongoEntity? = saveWeb(web.name, web.web)
+    fun saveWeb(web: NeuronWebMongoEntity): NeuronWebMongoEntity? = saveWeb(web.web)
 
-    fun saveWeb(name: String, web: NeuronWeb): NeuronWebMongoEntity? {
-        val result = neuronCollection.updateOne(NeuronWeb::name eq name, setValue(NeuronWebMongoEntity::web, web))
+    fun saveWeb(web: NeuronWeb): NeuronWebMongoEntity? {
+        val result = neuronCollection.updateOne(NeuronWebMongoEntity::name eq web.name, setValue(NeuronWebMongoEntity::web, web))
         if (result.matchedCount == 0L) {
-            neuronCollection.insertOne(NeuronWebMongoEntity(name, web))
+            neuronCollection.insertOne(NeuronWebMongoEntity(web.name, web))
         }
 
-        return neuronCollection.findOne(NeuronWebMongoEntity::name eq name)
+        return neuronCollection.findOne(NeuronWebMongoEntity::name eq web.name)
     }
 
     fun loadWeb(name: String) = neuronCollection.findOne(NeuronWebMongoEntity::name eq name)

@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class MongoUtilsTest {
-    private val web = NeuronWeb(3, listOf(3, 2, 2, 1))
+    private val web = NeuronWeb("test123", 3, listOf(3, 2, 2, 1))
 
     init {
         web.train(0.1, //случайные вектора для изменения начальных значений весов в нейронах
@@ -22,7 +22,7 @@ class MongoUtilsTest {
 
     @Test
     fun saveTest() {
-        val saved = MongoUtils.saveWeb("test123", web)
+        val saved = MongoUtils.saveWeb(web)
 
         assertNotNull(saved)
         assertEquals(web, saved.web)
@@ -32,7 +32,7 @@ class MongoUtilsTest {
 
     @Test
     fun loadTest() {
-        MongoUtils.saveWeb("test123", web)
+        MongoUtils.saveWeb(web)
         val saved = MongoUtils.loadWeb("test123")
 
         assertNotNull(saved)

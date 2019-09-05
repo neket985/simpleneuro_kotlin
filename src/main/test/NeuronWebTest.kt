@@ -19,7 +19,7 @@ class NeuronWebTest {
                 MatrixUtils.createRealVector(arrayOf(0.0).toDoubleArray())
         )
 
-        val web = NeuronWeb(4, listOf(3,
+        val web = NeuronWeb("test", 4, listOf(3,
                 2,
                 2,
                 2,
