@@ -12,7 +12,10 @@ import com.mongodb.ServerAddress
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealVector
-import org.litote.kmongo.*
+import org.litote.kmongo.KMongo
+import org.litote.kmongo.eq
+import org.litote.kmongo.findOne
+import org.litote.kmongo.getCollection
 import org.litote.kmongo.util.KMongoConfiguration
 import ru.simpleneuro.NeuronWeb
 
@@ -31,6 +34,7 @@ object MongoUtils {
     private val mongoClient = KMongo.createClient(servers, credentials)
     private val db = mongoClient.getDatabase(dbName)
     private val neuronCollection = db.getCollection<NeuronWebMongoEntity>("web")
+    private val neuronLayerCollection = db.getCollection<NeuronLayerMongo>("layer")
 
     init {
         KMongoConfiguration.registerBsonModule(
@@ -54,12 +58,17 @@ object MongoUtils {
     fun saveWeb(web: NeuronWebMongoEntity): NeuronWebMongoEntity? = saveWeb(web.web)
 
     fun saveWeb(web: NeuronWeb): NeuronWebMongoEntity? {
-        val result = neuronCollection.updateOne(NeuronWebMongoEntity::name eq web.name, setValue(NeuronWebMongoEntity::web, web))
-        if (result.matchedCount == 0L) {
-            neuronCollection.insertOne(NeuronWebMongoEntity(web.name, web))
-        }
+//        val result = neuronCollection.updateOne(NeuronWebMongoEntity::name eq web.name, setValue(NeuronWebMongoEntity::web, web))
+//        if (result.matchedCount == 0L) {
+        neuronCollection.insertOne(NeuronWebMongoEntity(web.name, web.layersCount, web.layersSizes))
+        val neuronWeb = neuronCollection.findOne(NeuronWebMongoEntity::name eq web.name)
 
-        return neuronCollection.findOne(NeuronWebMongoEntity::name eq web.name)
+        web.layers.mapIndexed { i, v ->
+            NeuronLayerMongo(v.size, v.prevLayerSize, i, neuronWeb!!._id!!)
+        }
+        neuronLayerCollection.insertMany(NeuronLayerMongo())
+//        }
+
     }
 
     fun loadWeb(name: String) = neuronCollection.findOne(NeuronWebMongoEntity::name eq name)

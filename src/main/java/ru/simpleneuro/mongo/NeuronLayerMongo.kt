@@ -1,4 +1,11 @@
 package ru.simpleneuro.mongo
 
-class NeuronLayerMongo {
-}
+import org.bson.types.ObjectId
+
+class NeuronLayerMongo(
+        val size: Int,
+        val prevLayerSize: Int,
+        val layerNum: Int,
+        val webId: ObjectId,
+        val _id: ObjectId? = null
+)
