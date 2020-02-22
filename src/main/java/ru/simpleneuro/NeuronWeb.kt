@@ -4,28 +4,28 @@ import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealVector
 import java.util.logging.Logger
 
-class NeuronWeb(val name: String, val layersCount: Int, val layersSizes: List<Int>, layers: List<NeuronLayer>? = null) {
+class NeuronWeb(val name: String, val layersCount: Int, val connectionsDimension: List<Int>, layers: List<NeuronLayer>? = null) {
     private val meter = ApplicationVars.metrics.meter("$name.train.meter")
     private val distanceHist = ApplicationVars.metrics.histogram("$name.train.distance.histogram")
-    private val inputSize = layersSizes.first()
+    private val inputSize = connectionsDimension.first()
     private val lock = Object()
 
     init {
-        if (layersSizes.size != layersCount + 1)
-            throw Error("Количество размеров слоев не соответсвует количеству слоев")
+        if (connectionsDimension.size != layersCount + 1)
+            throw Error("Количество соединений не соответсвует количеству слоев")
     }
 
     val layers =
             if (layers != null) {
-                if (layersSizes.size != layers.size + 1)
-                    throw Error("Количество размеров слоев не соответсвует списку слоев")
+                if (connectionsDimension.size != layers.size + 1)
+                    throw Error("Количество соединений не соответсвует списку слоев")
                 layers
             } else {
-                layersSizes.mapIndexedNotNull { i, size ->
+                connectionsDimension.mapIndexedNotNull { i, size ->
                     if (i == 0) {
                         null
                     } else {
-                        val prevSize = layersSizes[i - 1]
+                        val prevSize = connectionsDimension[i - 1]
                         NeuronLayer(size, prevSize)
                     }
                 }
@@ -84,7 +84,7 @@ class NeuronWeb(val name: String, val layersCount: Int, val layersSizes: List<In
             if (other is NeuronWeb) {
                 this.layersCount == other.layersCount &&
                         this.inputSize == other.inputSize &&
-                        this.layersSizes == other.layersSizes &&
+                        this.connectionsDimension == other.connectionsDimension &&
                         this.layers == other.layers
             } else {
                 super.equals(other)
@@ -92,7 +92,7 @@ class NeuronWeb(val name: String, val layersCount: Int, val layersSizes: List<In
 
     override fun hashCode(): Int {
         var result = layersCount
-        result = 31 * result + layersSizes.hashCode()
+        result = 31 * result + connectionsDimension.hashCode()
         result = 31 * result + inputSize
         result = 31 * result + layers.hashCode()
         return result

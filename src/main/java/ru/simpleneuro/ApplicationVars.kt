@@ -14,7 +14,7 @@ object ApplicationVars {
     val reporter = buildInfluxReporter(metrics, ConfigFactory.load().getConfig("influx"))
 
     init {
-        reporter.start(5, TimeUnit.SECONDS)
+//        reporter.start(5, TimeUnit.SECONDS)
     }
 
     private fun buildInfluxReporter(registry: MetricRegistry, cfg: Config): ScheduledReporter {

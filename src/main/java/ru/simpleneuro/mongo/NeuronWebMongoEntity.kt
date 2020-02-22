@@ -6,6 +6,6 @@ import ru.simpleneuro.NeuronWeb
 data class NeuronWebMongoEntity(
         val name: String,
         val layersCount: Int,
-        val layersSizes: List<Int>,
+        val connectionsDimension: List<Int>,
         var _id: ObjectId? = null
 )

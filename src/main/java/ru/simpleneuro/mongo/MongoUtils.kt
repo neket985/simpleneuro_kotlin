@@ -9,15 +9,19 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.mongodb.MongoCredential
 import com.mongodb.ServerAddress
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.model.UpdateOptions
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealVector
-import org.litote.kmongo.KMongo
-import org.litote.kmongo.eq
-import org.litote.kmongo.findOne
-import org.litote.kmongo.getCollection
+import org.bson.conversions.Bson
+import org.bson.types.ObjectId
+import org.litote.kmongo.*
 import org.litote.kmongo.util.KMongoConfiguration
+import ru.simpleneuro.Neuron
+import ru.simpleneuro.NeuronLayer
 import ru.simpleneuro.NeuronWeb
+import kotlin.reflect.full.declaredMemberProperties
 
 object MongoUtils {
     private val config = ConfigFactory.load().getConfig("mongoDb")
@@ -33,8 +37,9 @@ object MongoUtils {
 
     private val mongoClient = KMongo.createClient(servers, credentials)
     private val db = mongoClient.getDatabase(dbName)
-    private val neuronCollection = db.getCollection<NeuronWebMongoEntity>("web")
+    private val webCollection = db.getCollection<NeuronWebMongoEntity>("web")
     private val neuronLayerCollection = db.getCollection<NeuronLayerMongo>("layer")
+    private val neuronCollection = db.getCollection<NeuronMongo>("neuron")
 
     init {
         KMongoConfiguration.registerBsonModule(
@@ -55,24 +60,97 @@ object MongoUtils {
         )
     }
 
-    fun saveWeb(web: NeuronWebMongoEntity): NeuronWebMongoEntity? = saveWeb(web.web)
-
-    fun saveWeb(web: NeuronWeb): NeuronWebMongoEntity? {
-//        val result = neuronCollection.updateOne(NeuronWebMongoEntity::name eq web.name, setValue(NeuronWebMongoEntity::web, web))
-//        if (result.matchedCount == 0L) {
-        neuronCollection.insertOne(NeuronWebMongoEntity(web.name, web.layersCount, web.layersSizes))
-        val neuronWeb = neuronCollection.findOne(NeuronWebMongoEntity::name eq web.name)
-
+    fun saveWeb(web: NeuronWeb) {
+        val neuronWeb = upsertWeb(web)
         web.layers.mapIndexed { i, v ->
-            NeuronLayerMongo(v.size, v.prevLayerSize, i, neuronWeb!!._id!!)
+            val neuronLayer = upsertLayer(v.size, v.prevLayerSize, i, neuronWeb._id!!)
+            v.neurons.mapIndexed { ni, nv ->
+                upsertNeuron(nv.relationsCount, nv.weights, nv.b, ni, neuronLayer._id!!)
+            }
         }
-        neuronLayerCollection.insertMany(NeuronLayerMongo())
-//        }
-
     }
 
-    fun loadWeb(name: String) = neuronCollection.findOne(NeuronWebMongoEntity::name eq name)
+    fun loadWeb(name: String): NeuronWeb? =
+            getWeb(name)?.let { web ->
+                val layers = neuronLayerCollection
+                        .find(NeuronLayerMongo::webId eq web._id!!)
+                        .sort(NeuronLayerMongo::layerNum eq 1)
+                        .map { layer ->
+                            val neurons = neuronCollection
+                                    .find(NeuronMongo::layerId eq layer._id!!)
+                                    .sort(NeuronMongo::neuronNum eq 1)
+                                    .map { neuron ->
+                                        Neuron(neuron.relationsCount, neuron.weights, neuron.b)
+                                    }.toList()
+                            NeuronLayer(
+                                    layer.size,
+                                    layer.prevLayerSize,
+                                    neurons
+                            )
+                        }.toList()
 
-    fun deleteWeb(name: String) = neuronCollection.deleteOne(NeuronWebMongoEntity::name eq name)
+                NeuronWeb(web.name, web.layersCount, web.connectionsDimension, layers)
+            }
 
+
+    fun deleteWeb(name: String) {
+        getWeb(name)?.let {web ->
+            webCollection.deleteOneById(web._id!!)
+            val layersIds = neuronLayerCollection.find(NeuronLayerMongo::webId eq web._id).map { it._id }.toList()
+            neuronLayerCollection.deleteMany(NeuronLayerMongo::webId eq web._id)
+            neuronCollection.deleteMany(NeuronMongo::layerId `in` layersIds)
+        }
+    }
+
+    fun getWeb(name: String) = webCollection.findOne(NeuronWebMongoEntity::name eq name)
+    fun upsertWeb(name: String, layersCount: Int, layersSizes: List<Int>): NeuronWebMongoEntity {
+        webCollection.upsert(
+                NeuronWebMongoEntity::name eq name,
+                NeuronWebMongoEntity(name, layersCount, layersSizes)
+        )
+        return getWeb(name)!!
+    }
+
+    fun upsertWeb(web: NeuronWeb) = upsertWeb(web.name, web.layersCount, web.connectionsDimension)
+
+    fun getLayer(webId: ObjectId, layerNum: Int) = neuronLayerCollection.findOne(
+            NeuronLayerMongo::webId eq webId,
+            NeuronLayerMongo::layerNum eq layerNum
+    )
+
+    fun upsertLayer(size: Int, prevLayerSize: Int, layerNum: Int, webId: ObjectId): NeuronLayerMongo {
+        neuronLayerCollection.upsert(
+                and(
+                        NeuronLayerMongo::webId eq webId,
+                        NeuronLayerMongo::layerNum eq layerNum
+                ),
+                NeuronLayerMongo(size, prevLayerSize, layerNum, webId)
+        )
+        return getLayer(webId, layerNum)!!
+    }
+
+    fun getNeuron(layerId: ObjectId, neuronNum: Int) = neuronCollection.findOne(
+            NeuronMongo::layerId eq layerId,
+            NeuronMongo::neuronNum eq neuronNum
+    )
+
+    fun upsertNeuron(relationsCount: Int, weights: RealVector, b: Double, neuronNum: Int, layerId: ObjectId): NeuronMongo {
+        neuronCollection.upsert(
+                and(
+                        NeuronMongo::layerId eq layerId,
+                        NeuronMongo::neuronNum eq neuronNum
+                ),
+                NeuronMongo(relationsCount, weights, b, neuronNum, layerId)
+        )
+        return getNeuron(layerId, neuronNum)!!
+    }
+
+    fun <T : Any> MongoCollection<T>.upsert(filter: Bson, data: T) {
+        val updates = data::class.declaredMemberProperties.mapNotNull {
+            if (it.name != "_id") {
+                setValue(it, it.getter.call(data))
+            } else null
+        }.toTypedArray()
+        this.updateOne(filter, combine(*updates), UpdateOptions().upsert(true))
+    }
 }

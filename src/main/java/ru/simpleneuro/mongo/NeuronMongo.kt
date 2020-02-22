@@ -7,7 +7,7 @@ class NeuronMongo(
         val relationsCount: Int,
         val weights: RealVector,
         val b: Double,
-        val nueronNum: Int,
+        val neuronNum: Int,
         val layerId: ObjectId,
         val _id: ObjectId? = null
 )
