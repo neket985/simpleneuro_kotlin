@@ -1,5 +1,6 @@
 package ru.simpleneuro
 
+import com.codahale.metrics.ConsoleReporter
 import com.codahale.metrics.MetricFilter
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.ScheduledReporter
@@ -11,10 +12,11 @@ import java.util.concurrent.TimeUnit
 
 object ApplicationVars {
     val metrics = MetricRegistry()
-    val reporter = buildInfluxReporter(metrics, ConfigFactory.load().getConfig("influx"))
+//    val reporter = buildInfluxReporter(metrics, ConfigFactory.load().getConfig("influx"))
+    val reporter = ConsoleReporter.forRegistry(metrics).build()
 
     init {
-//        reporter.start(5, TimeUnit.SECONDS)
+        reporter.start(5, TimeUnit.SECONDS)
     }
 
     private fun buildInfluxReporter(registry: MetricRegistry, cfg: Config): ScheduledReporter {

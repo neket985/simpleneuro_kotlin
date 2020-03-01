@@ -1,5 +1,7 @@
 package ru.simpleneuro
 
+import io.reactivex.Single
+import io.reactivex.rxkotlin.toObservable
 import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealVector
 import java.util.*
@@ -21,26 +23,57 @@ class NeuronLayer(
                 }
             }
 
-    fun calcOut(input: RealVector): RealVector =
-            MatrixUtils.createRealVector(
-                    DoubleArray(size) { i ->
-                        val neuron = neurons[i]
-                        neuron.calcOut(input)
-                    }
-            )
+    fun calcOut(input: RealVector): Single<RealVector> =
+            neurons.toObservable().map {
+                it.calcOut(input)
+            }.toList().map {
+                MatrixUtils.createRealVector(it.toDoubleArray())
+            }
 
-    fun getDeltasForLastLayer(output: RealVector, step: Double) = Vector(
+    fun trainOut(input: RealVector) =
+            neurons.toObservable().map {
+                it.trainOut(input)
+            }.toList().map {
+                MatrixUtils.createRealVector(it.map { it.first }.toDoubleArray()) to
+                        MatrixUtils.createRealVector(it.map { it.second }.toDoubleArray())
+            }
+
+    fun getDeltaForLastLayer(input: RealVector, step: Double, etalon: RealVector, output: RealVector, deriv: RealVector) = Vector(
             neurons.mapIndexed { i, neuron ->
-                neuron.deltaForLastLayer(output.getEntry(i), step)
+                val delta = (output.getEntry(i) - etalon.getEntry(i)) * deriv.getEntry(i)
+                val correctVector = input.map {
+                    //todo async
+                    -step * it * delta
+                }
+                val oldWeights = neuron.weights.copy()
+                neuron.correctWeights(correctVector)
+                neuron.correctB(delta, step)
+                Delta(
+                        delta,
+                        oldWeights
+                )
             }
     )
 
-    fun getDeltas(nextDeltas: List<Delta>, step: Double) = Vector(
+    fun getDelta(deriv: RealVector, nextDeltas: List<Delta>, input: RealVector, step: Double) = Vector(
             neurons.mapIndexed { i, neuron ->
                 val nextDeltaSum = nextDeltas.sumByDouble {
+                    //todo async
                     it.delta * it.weights.getEntry(i)
                 }
-                neuron.delta(nextDeltaSum, step)
+                val delta = nextDeltaSum * deriv.getEntry(i)
+                val correctVector = input.map {
+                    //todo async
+                    -step * it * delta
+                }
+                val oldWeights = neuron.weights.copy()
+                neuron.correctWeights(correctVector)
+                neuron.correctB(delta, step)
+
+                Delta(
+                        delta,
+                        oldWeights
+                )
             }
     )
 
@@ -59,5 +92,4 @@ class NeuronLayer(
         result = 31 * result + neurons.hashCode()
         return result
     }
-
 }

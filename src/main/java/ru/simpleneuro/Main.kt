@@ -31,10 +31,10 @@ object Main {
                 }.toMap()
         )
 
-        val web4 = MongoUtils.loadWeb("numbers3x3")
-                ?: NeuronWeb("numbers3x3", 3, listOf(784, 300, 300, 10))
+        val web4 = MongoUtils.loadWeb("numbers")
+                ?: NeuronWeb("numbers", 2, listOf(784, 50, 10))
         ShutdownHook.addWeb(web4)
-        infinityTrain(web4, trainVectors, 0.0001)
+        infinityTrain(web4, trainVectors, 0.1)
 
     }
 

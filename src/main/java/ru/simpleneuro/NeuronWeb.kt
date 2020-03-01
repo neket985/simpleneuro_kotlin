@@ -1,14 +1,17 @@
 package ru.simpleneuro
 
-import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealVector
+import java.util.*
+import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.logging.Logger
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 
 class NeuronWeb(val name: String, val layersCount: Int, val connectionsDimension: List<Int>, layers: List<NeuronLayer>? = null) {
     private val meter = ApplicationVars.metrics.meter("$name.train.meter")
     private val distanceHist = ApplicationVars.metrics.histogram("$name.train.distance.histogram")
     private val inputSize = connectionsDimension.first()
-    private val lock = Object()
+    private val lock = ReentrantReadWriteLock()
 
     init {
         if (connectionsDimension.size != layersCount + 1)
@@ -32,51 +35,45 @@ class NeuronWeb(val name: String, val layersCount: Int, val connectionsDimension
             }
 
     fun calcOut(input: RealVector): RealVector {
-        synchronized(lock) {
+        lock.read {
             if (input.dimension != inputSize) throw Error("Входной вектор по размерам не совпадает с ожидаемым")
 
             val iter = layers.iterator()
             var result: RealVector = input
             while (iter.hasNext()) {
                 val layer = iter.next()
-                result = layer.calcOut(result)
+                result = layer.calcOut(result).blockingGet()
             }
             return result
         }
     }
 
-    fun train(step: Double, input: RealVector, output: RealVector): Double {
-        synchronized(lock) {
+    fun train(step: Double, input: RealVector, etalon: RealVector): Double {
+        lock.write {
             meter.mark()
-            val out = calcOut(input)
+            if (input.dimension != inputSize) throw Error("Входной вектор по размерам не совпадает с ожидаемым")
 
-            val lastLayer = layers.last()
-            var nextDeltas = lastLayer.getDeltasForLastLayer(output, step)
-            if (layersCount > 1) {
-                layers.reversed().subList(1, layersCount).forEach { layer ->
-                    nextDeltas = layer.getDeltas(nextDeltas, step)
-                }
-            }
-            val dist = output.getDistance(out)
+            val iter = layers.iterator()
+            val (_, output) =
+                    if (iter.hasNext()) {
+                        recursiveTrain(iter, step, input, etalon)
+                    } else throw IllegalStateException("Layers is empty")
+
+            val dist = etalon.getDistance(output)
             distanceHist.update((1000000 * dist).toLong())
             return dist
         }
     }
 
-    fun trainAll(step: Double, iterations: Int, input: List<RealVector>, output: List<RealVector>) {
-        synchronized(lock) {
-            meter.mark(input.size.toLong())
-            if (input.size != output.size) throw Error("Размер входного массива не соответствует размеру выходного")
-
-            for (i in 0..iterations) {
-                for (j in 0 until input.size) {
-                    val train_input = input[j]
-                    val train_otput = output[j]
-                    train(step, train_input, train_otput)
-                }
-                println(calcOut(MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 0.0).toDoubleArray())).toString())
-//            logger.fine(calcOut(MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 0.0).toDoubleArray()))
-            }
+    private fun recursiveTrain(iter: Iterator<NeuronLayer>, step: Double, input: RealVector, etalon: RealVector): Pair<Vector<Delta>, RealVector> {
+        val layer = iter.next()
+        val (out, deriv) = layer.trainOut(input).blockingGet()
+        return if (iter.hasNext()) {
+            val (nextDeltas, lastOutput) = recursiveTrain(iter, step, out, etalon)
+            layer.getDelta(deriv, nextDeltas, input, step) to lastOutput
+        } else {
+            val deltas = layer.getDeltaForLastLayer(input, step, etalon, out, deriv)
+            deltas to out
         }
     }
 

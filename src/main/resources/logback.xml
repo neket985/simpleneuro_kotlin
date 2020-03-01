@@ -14,7 +14,7 @@
     </appender>
 
     <logger name="org.mongodb" level="info"/>
-    <root level="info">
+    <root level="debug">
         <!--<appender-ref ref="FILE" />-->
         <appender-ref ref="STDOUT" />
     </root>

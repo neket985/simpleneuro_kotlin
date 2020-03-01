@@ -18,55 +18,24 @@ class Neuron(val relationsCount: Int, weights: RealVector? = null, b: Double? = 
                         }
                 )
             }
-
     var b = b ?: 0.0
 
-    private var lastCalc: Double = 0.0
-    private var lastInput: RealVector? = null
-    private var lastZ: Double = 0.0
-
-
     fun calcOut(input: RealVector): Double {
-        lastInput = input
-        lastCalc = synoidFun(z(input))
-        return lastCalc
+        return synoidFun(z(input))
     }
 
-    private fun z(input: RealVector): Double {
-        lastZ = input.dotProduct(weights) + b
-        return lastZ
+    fun trainOut(input: RealVector): Pair<Double, Double> {
+        val z = z(input)
+        return synoidFun(z) to derivFun(z)
     }
 
-    fun deltaForLastLayer(output: Double, step: Double): Delta {
-        val delta = Delta(
-                -(output - lastCalc) * derivFun(lastZ),
-                weights
-        )
-        correctWeights(delta.delta, step)
-        correctB(delta.delta, step)
-        return delta
+    private fun z(input: RealVector): Double = input.dotProduct(weights) + b
+
+    fun correctWeights(correctVector: RealVector) {
+        weights = weights.add(correctVector)
     }
 
-    fun delta(summaryDelta: Double, step: Double): Delta {
-        val delta = Delta(
-                summaryDelta * derivFun(lastZ),
-                weights
-        )
-        correctWeights(delta.delta, step)
-        correctB(delta.delta, step)
-        return delta
-    }
-
-    private fun correctWeights(delta: Double, step: Double) {
-        if (lastInput != null) {
-            val correctVector = lastInput!!.map {
-                -step * it * delta
-            }
-            weights = weights.add(correctVector)
-        }
-    }
-
-    private fun correctB(delta: Double, step: Double) {
+    fun correctB(delta: Double, step: Double) {
         b += -step * delta
     }
 
@@ -87,7 +56,7 @@ class Neuron(val relationsCount: Int, weights: RealVector? = null, b: Double? = 
     }
 
     companion object {
-        private fun synoidFun(x: Double) = 1 / (1 + Math.exp(-x))
+        fun synoidFun(x: Double) = 1 / (1 + Math.exp(-x))
         private fun derivFun(x: Double) = synoidFun(x).let { it * (1 - it) }
         val rand = Random(1)
     }
