@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit
 
 object ApplicationVars {
     val metrics = MetricRegistry()
-//    val reporter = buildInfluxReporter(metrics, ConfigFactory.load().getConfig("influx"))
-    val reporter = ConsoleReporter.forRegistry(metrics).build()
+    val reporter = buildInfluxReporter(metrics, ConfigFactory.load().getConfig("influx"))
+//    val reporter = ConsoleReporter.forRegistry(metrics).build()
 
     init {
         reporter.start(5, TimeUnit.SECONDS)

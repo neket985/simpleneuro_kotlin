@@ -26,8 +26,14 @@ class NeuronWebTest {
                 1
         ))
 
-        web.trainAll(0.1, 100000, training_set_inputs.toList(), training_set_outputs.toList())
+        (0..100000).forEach {
+            training_set_inputs.forEachIndexed { index, realVector ->
+                web.train(0.1, realVector, training_set_outputs.get(index), 1)
+            }
+        }
 
-        assert(web.calcOut(MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 0.0).toDoubleArray())).getEntry(0) > 0.9)
+        val out = web.calcOut(MatrixUtils.createRealVector(arrayOf(1.0, 0.0, 0.0).toDoubleArray())).getEntry(0)
+        println(out)
+        assert(out > 0.9)
     }
 }

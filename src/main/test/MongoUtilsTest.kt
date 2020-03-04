@@ -4,6 +4,7 @@ import ru.simpleneuro.NeuronWeb
 import ru.simpleneuro.mongo.MongoUtils
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class MongoUtilsTest {
     private val web = NeuronWeb("test123", 3, listOf(3, 2, 2, 1))
@@ -16,27 +17,18 @@ class MongoUtilsTest {
                 MatrixUtils.createRealVector(DoubleArray(1) {
                     1.0
 
-                })
+                }),
+                1
         )
     }
 
     @Test
     fun saveTest() {
-        val saved = MongoUtils.saveWeb(web)
-
-        assertNotNull(saved)
-        assertEquals(web, saved.web)
-
-        deleteTest()
-    }
-
-    @Test
-    fun loadTest() {
         MongoUtils.saveWeb(web)
         val saved = MongoUtils.loadWeb("test123")
 
         assertNotNull(saved)
-        assertEquals(web, saved.web)
+        assertEquals(web, saved)
 
         deleteTest()
     }
@@ -44,6 +36,7 @@ class MongoUtilsTest {
     fun deleteTest() {
         val delResult = MongoUtils.deleteWeb("test123")
 
-        assertEquals(delResult.deletedCount, 1)
+        val saved = MongoUtils.loadWeb("test123")
+        assertNull(saved)
     }
 }
