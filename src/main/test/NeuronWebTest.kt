@@ -28,7 +28,7 @@ class NeuronWebTest {
 
         (0..100000).forEach {
             training_set_inputs.forEachIndexed { index, realVector ->
-                web.train(0.1, realVector, training_set_outputs.get(index), 1)
+                web.train(0.1, realVector, training_set_outputs.get(index))
             }
         }
 

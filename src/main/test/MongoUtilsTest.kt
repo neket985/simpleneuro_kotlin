@@ -17,8 +17,7 @@ class MongoUtilsTest {
                 MatrixUtils.createRealVector(DoubleArray(1) {
                     1.0
 
-                }),
-                1
+                })
         )
     }
 
@@ -33,6 +32,7 @@ class MongoUtilsTest {
         deleteTest()
     }
 
+    @Test
     fun deleteTest() {
         val delResult = MongoUtils.deleteWeb("test123")
 

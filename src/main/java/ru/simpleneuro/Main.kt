@@ -34,7 +34,7 @@ object Main {
         val web4 = MongoUtils.loadWeb("numbers_bottle")
                 ?: NeuronWeb("numbers_bottle", 13, listOf(784, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 25, 15, 10))
         ShutdownHook.addWeb(web4)
-        infinityTrain(web4, trainVectors, 0.001)
+        infinityTrain(web4, trainVectors, 0.000001)
 
     }
 
@@ -48,7 +48,7 @@ object Main {
                 val train = trainVectors[i]!!
                 val randFile = Random.nextInt(train.size)
                 val (vector, outVector) = train[randFile]
-                web.train(trainScope, vector, outVector, i)
+                web.train(trainScope, vector, outVector)
             }
         }
     }

@@ -2,15 +2,23 @@ package ru.simpleneuro
 
 import org.apache.commons.math3.linear.RealVector
 import java.util.*
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.logging.Logger
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 class NeuronWeb(val name: String, val layersCount: Int, val connectionsDimension: List<Int>, layers: List<NeuronLayer>? = null) {
-    private val meter = ApplicationVars.metrics.meter("numbers.train.meter")
-    private val success = ApplicationVars.metrics.histogram("numbers.success.histo")
-    private val distanceHist = ApplicationVars.metrics.histogram("numbers.train.distance.histogram")
+    private val trainCounter = AtomicLong(0L)
+    fun getTrainCounter() = trainCounter.get()
+    fun resetTrainCounter() = trainCounter.set(0L)
+
+    @Volatile
+    private var onTrainCompleteCallback: (RealVector, RealVector, Double) -> Unit = { _, _, _ -> }
+    fun setOnTrainCompleteCollback(callback: (RealVector, RealVector, Double) -> Unit) {
+        onTrainCompleteCallback = callback
+    }
+
     private val inputSize = connectionsDimension.first()
     private val lock = ReentrantReadWriteLock()
 
@@ -21,7 +29,7 @@ class NeuronWeb(val name: String, val layersCount: Int, val connectionsDimension
 
     val layers =
             if (layers != null) {
-                if (connectionsDimension.size != layers.size + 1)
+                if (layersCount != layers.size)
                     throw Error("Количество соединений не соответсвует списку слоев")
                 layers
             } else {
@@ -49,9 +57,9 @@ class NeuronWeb(val name: String, val layersCount: Int, val connectionsDimension
         }
     }
 
-    fun train(step: Double, input: RealVector, etalon: RealVector, result: Int): Double {
+    fun train(step: Double, input: RealVector, etalon: RealVector): Double {
         lock.write {
-            meter.mark()
+            trainCounter.incrementAndGet()
             if (input.dimension != inputSize) throw Error("Входной вектор по размерам не совпадает с ожидаемым")
 
             val iter = layers.iterator()
@@ -60,14 +68,10 @@ class NeuronWeb(val name: String, val layersCount: Int, val connectionsDimension
                         recursiveTrain(iter, step, input, etalon)
                     } else throw IllegalStateException("Layers is empty")
 
-            if(output.maxIndex == result){
-                success.update(1)
-            }else {
-                success.update(0)
-            }
-
             val dist = etalon.getDistance(output)
-            distanceHist.update((1000000 * dist).toLong())
+
+            onTrainCompleteCallback(output, etalon, dist)
+
             return dist
         }
     }

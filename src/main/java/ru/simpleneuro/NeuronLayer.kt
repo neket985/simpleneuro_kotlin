@@ -13,9 +13,9 @@ class NeuronLayer(
 ) {
     val neurons =
             if (neurons != null) {
-                if (neurons.size != size)
+                if (neurons.size != size) {
                     throw Error("Размер слоя не соответсвует размеру массива")
-
+                }
                 neurons
             } else {
                 (0 until size).map {
@@ -24,7 +24,9 @@ class NeuronLayer(
             }
 
     fun calcOut(input: RealVector): Single<RealVector> =
-            neurons.toObservable().map {
+
+
+    neurons.toObservable().map {
                 it.calcOut(input)
             }.toList().map {
                 MatrixUtils.createRealVector(it.toDoubleArray())
